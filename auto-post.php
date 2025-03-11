@@ -35,3 +35,6 @@ if ($http_code === 200 && $response) {
     echo "Raw response (if any):\n";
     echo $response ? $response : "No response received.\n";
 }
+if (curl_errno($ch)) {
+    echo "cURL error: " . curl_error($ch) . "\n";
+}
