@@ -26,3 +26,6 @@ if (curl_errno($ch)) {
         echo "Failed to fetch RSS feed. HTTP Status Code: $http_code\n";
     }
 }
+if ($http_code === 200 && $response) {
+    echo "RSS Feed Response (Raw):\n";
+    echo $response . "\n"; // Ye line add ki hai
