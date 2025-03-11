@@ -1,0 +1,20 @@
+name: Auto Social Poster
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Har 30 minute pe run hoga
+  workflow_dispatch:        # Manual run ka option bhi milega
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repository clone karein
+      uses: actions/checkout@v2
+
+    - name: PHP install karein
+      run: sudo apt-get install php
+
+    - name: RSS se post karein
+      run: php auto-post.php
