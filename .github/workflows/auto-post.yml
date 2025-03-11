@@ -1,0 +1,20 @@
+name: Auto Social Poster
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Har 30 minute baad chalne ke liye
+  workflow_dispatch:       # Manual run ke liye
+
+jobs:
+  post_to_socials:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Repository clone karein
+      uses: actions/checkout@v2
+
+    - name: PHP install karein
+      run: sudo apt-get install php-cli
+
+    - name: PHP script ko run karein
+      run: php auto-post.php
