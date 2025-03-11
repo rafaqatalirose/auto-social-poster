@@ -6,41 +6,45 @@ $rss_feed_url = 'https://newvideo.great-site.net/feed/';
 // Pinterest URL
 $pinterest_url = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
 
-// Fetch RSS Feed with SSL bypass
+// Fetch RSS Feed with cURL
 try {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $rss_feed_url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disable SSL verification
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
 
-    $rss_data = curl_exec($ch);
+    $response = curl_exec($ch);
+    if (curl_errno($ch)) {
+        throw new Exception("cURL error: " . curl_error($ch));
+    }
     curl_close($ch);
 
-    if (!$rss_data) {
-        throw new Exception("RSS feed load failed.");
+    if (empty($response)) {
+        throw new Exception("RSS feed returned empty response.");
     }
 
-    $rss = simplexml_load_string($rss_data);
+    $rss = simplexml_load_string($response);
     if (!$rss) {
-        throw new Exception("Failed to parse RSS feed.");
+        throw new Exception("RSS feed load failed — Invalid XML response.");
     }
 
     $latest_item = $rss->channel->item[0];
-    $post_title = (string) $latest_item->title;
-    $post_link = (string) $latest_item->link;
-    $post_description = strip_tags((string) $latest_item->description);
-    
-    // Generate hashtags from categories
-    $categories = [];
+    $post_title = $latest_item->title;
+    $post_link = $latest_item->link;
+    $post_description = strip_tags($latest_item->description);
+
+    // Extract categories as hashtags
+    $hashtags = [];
     foreach ($latest_item->category as $category) {
-        $categories[] = '#' . preg_replace('/\s+/', '', (string) $category);
+        $hashtags[] = '#' . preg_replace('/\s+/', '', strtolower($category));
     }
-    $hashtags = implode(' ', $categories);
+    $hashtag_string = implode(' ', $hashtags);
 
-    $message = "🆕 New Video Alert: $post_title\n🔗 Watch here: $post_link\n\n📌 Also shared on Pinterest!\n$hashtags";
+    $message = "🆕 New Video Alert: $post_title\n🔗 Watch here: $post_link\n$hashtag_string\n\n📌 Shared on Pinterest!";
 
-    // Post to Pinterest (Using cURL)
+    // Post to Pinterest (Simulated - adjust for API or manual check)
     $ch2 = curl_init();
     curl_setopt($ch2, CURLOPT_URL, $pinterest_url);
     curl_setopt($ch2, CURLOPT_POST, 1);
@@ -54,7 +58,6 @@ try {
 } catch (Exception $e) {
     echo "Error: " . $e->getMessage();
 }
-
 ?>
 
-// Ab bas ye script GitHub pe save karke ek cron job ya manual run setup karna hai. 🚀
+// Ab bas ye script GitHub pe save karke run karo — ye hosting ki block ko bypass karega! 🚀
