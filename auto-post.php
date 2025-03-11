@@ -3,7 +3,8 @@
 // RSS Feed URL
 $rss_feed_url = 'https://newvideo.great-site.net/feed/';
 
-// Pinterest Board URL
+// Facebook and Pinterest URLs
+$facebook_url = 'https://www.facebook.com/profile.php?id=61554833731402';
 $pinterest_url = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
 
 // Fetch RSS Feed
@@ -17,24 +18,28 @@ try {
     $post_title = $latest_item->title;
     $post_link = $latest_item->link;
     $post_description = strip_tags($latest_item->description);
-    
-    // Generate hashtags from categories
-    $hashtags = [];
-    foreach ($latest_item->category as $category) {
-        $hashtags[] = '#' . str_replace(' ', '', $category);
-    }
-    $hashtags_string = implode(' ', $hashtags);
 
-    $message = "🆕 New Video Alert: $post_title\n🔗 Watch here: $post_link\n\n$hashtags_string\n📌 Auto-shared on Pinterest!";
+    $message = "🆕 New Video Alert: $post_title\n🔗 Watch here: $post_link\n\n📌 Also shared on Pinterest!";
 
-    // Post to Pinterest (Using cURL)
+    // Post to Facebook (Using cURL)
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $pinterest_url);
+    curl_setopt($ch, CURLOPT_URL, $facebook_url);
     curl_setopt($ch, CURLOPT_POST, 1);
     curl_setopt($ch, CURLOPT_POSTFIELDS, ['message' => $message]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
     curl_close($ch);
+
+    echo "Facebook post done!\n";
+
+    // Post to Pinterest (Using cURL)
+    $ch2 = curl_init();
+    curl_setopt($ch2, CURLOPT_URL, $pinterest_url);
+    curl_setopt($ch2, CURLOPT_POST, 1);
+    curl_setopt($ch2, CURLOPT_POSTFIELDS, ['message' => $message]);
+    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+    $response2 = curl_exec($ch2);
+    curl_close($ch2);
 
     echo "Pinterest post done!\n";
 
@@ -43,4 +48,5 @@ try {
 }
 ?>
 
-// Ab bas ye script GitHub pe save karke ek cron job ya manual run setup karna hai. 🚀
+
+// Save aur commit karne ke baad main workflow file ka code bhi de dunga! 🚀
