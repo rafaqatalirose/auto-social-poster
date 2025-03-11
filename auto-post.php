@@ -1,62 +1,46 @@
 <?php
 
-function fetchRSSFeed($feedUrl) {
-    $rss = simplexml_load_file($feedUrl);
+// RSS Feed URL
+$rss_feed_url = 'https://newvideo.great-site.net/feed/';
+
+// Pinterest Board URL
+$pinterest_url = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
+
+// Fetch RSS Feed
+try {
+    $rss = simplexml_load_file($rss_feed_url);
     if (!$rss) {
-        die("RSS Feed load failed!");
+        throw new Exception("RSS feed load failed.");
     }
-    return $rss;
-}
 
-function postToFacebook($postTitle, $postLink) {
-    $fbPageUrl = 'https://www.facebook.com/profile.php?id=61554833731402';
-    $message = urlencode("$postTitle\n\nRead more: $postLink");
+    $latest_item = $rss->channel->item[0];
+    $post_title = $latest_item->title;
+    $post_link = $latest_item->link;
+    $post_description = strip_tags($latest_item->description);
     
+    // Generate hashtags from categories
+    $hashtags = [];
+    foreach ($latest_item->category as $category) {
+        $hashtags[] = '#' . str_replace(' ', '', $category);
+    }
+    $hashtags_string = implode(' ', $hashtags);
+
+    $message = "🆕 New Video Alert: $post_title\n🔗 Watch here: $post_link\n\n$hashtags_string\n📌 Auto-shared on Pinterest!";
+
+    // Post to Pinterest (Using cURL)
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $fbPageUrl);
+    curl_setopt($ch, CURLOPT_URL, $pinterest_url);
     curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, "message=$message");
+    curl_setopt($ch, CURLOPT_POSTFIELDS, ['message' => $message]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
     curl_close($ch);
-    
-    return $response;
+
+    echo "Pinterest post done!\n";
+
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage();
 }
-
-function postToPinterest($postTitle, $postLink, $imageUrl) {
-    $pinBoardUrl = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
-    
-    $pinData = [
-        'title' => $postTitle,
-        'link' => $postLink,
-        'image_url' => $imageUrl,
-    ];
-    
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $pinBoardUrl);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($pinData));
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $response = curl_exec($ch);
-    curl_close($ch);
-    
-    return $response;
-}
-
-$feedUrl = 'https://newvideo.great-site.net/feed/';
-$rss = fetchRSSFeed($feedUrl);
-
-$latestPost = $rss->channel->item[0];
-$postTitle = (string) $latestPost->title;
-$postLink = (string) $latestPost->link;
-$postImage = (string) $latestPost->enclosure['url'];
-
-$fbResponse = postToFacebook($postTitle, $postLink);
-$pinResponse = postToPinterest($postTitle, $postLink, $postImage);
-
-echo "Facebook Response: $fbResponse\n";
-echo "Pinterest Response: $pinResponse\n";
-
 ?>
 
-// Is script ko GitHub pe dal ke, GitHub Actions se har 30 min pe run kara sakte hain! 🚀
+// Ab bas ye script GitHub pe save karke ek cron job ya manual run setup karna hai. 🚀
