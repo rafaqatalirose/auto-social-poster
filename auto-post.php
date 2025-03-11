@@ -26,3 +26,12 @@ if ($http_code === 200 && $response) {
 } else {
     echo "Failed to fetch RSS feed. HTTP Status Code: $http_code\n";
 }
+// Debug Response
+if ($http_code === 200 && $response) {
+    echo "Response from RSS Feed:\n";
+    echo $response;
+} else {
+    echo "Failed to fetch RSS feed. HTTP Status Code: $http_code\n";
+    echo "Raw response (if any):\n";
+    echo $response ? $response : "No response received.\n";
+}
