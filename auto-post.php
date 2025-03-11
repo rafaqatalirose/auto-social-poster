@@ -6,12 +6,13 @@ if (curl_errno($ch)) {
 } else {
     echo "HTTP Status Code: $http_code\n";
     if ($http_code === 200 && $response) {
-        echo "RSS Feed Response:\n";
+        echo "RSS Feed Response (Raw):\n";
+        echo $response . "\n"; // Raw response ko dekhne ke liye
 
-        // Response ko decode kar rahe hain
-        $decoded_response = utf8_decode($response);
-        
-        $xml = simplexml_load_string($decoded_response, 'SimpleXMLElement', LIBXML_NOCDATA);
+        // XML parsing errors ko catch karne ke liye
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($response, 'SimpleXMLElement', LIBXML_NOCDATA);
+
         if ($xml) {
             foreach ($xml->channel->item as $item) {
                 echo "Title: " . html_entity_decode($item->title) . "\n";
@@ -20,12 +21,15 @@ if (curl_errno($ch)) {
                 echo "--------------------------\n";
             }
         } else {
-            echo "Failed to parse RSS feed.\n";
+            echo "Failed to parse RSS feed. Errors:\n";
+            foreach (libxml_get_errors() as $error) {
+                echo "Error: " . $error->message . "\n";
+            }
+            libxml_clear_errors();
         }
     } else {
         echo "Failed to fetch RSS feed. HTTP Status Code: $http_code\n";
     }
 }
-if ($http_code === 200 && $response) {
-    echo "RSS Feed Response (Raw):\n";
-    echo $response . "\n"; // Ye line add ki hai
+
+curl_close($ch);
