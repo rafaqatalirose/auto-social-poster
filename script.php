@@ -58,7 +58,10 @@ function postToPinterest($postTitle, $postLink, $session) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Cookie: ' . $session,
     ]);
-
+    
+ // SSL ke liye cacert.pem ka path set karein
+    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
+    
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
