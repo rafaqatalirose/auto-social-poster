@@ -112,3 +112,5 @@ logMessage('Script finished.');
 
 Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
 -->
+// Debugging: log API response
+logMessage('Raw API response: ' . print_r($posts, true));
