@@ -36,9 +36,11 @@ function fetchPosts($apiUrl) {
         ]
     ]);
 
-    $response = file_get_contents($apiUrl, false, $context);
+    // Check if SSL context is correctly set
+    $response = @file_get_contents($apiUrl, false, $context);
     if ($response === false) {
-        logMessage('Failed to fetch posts from WordPress API.');
+        $error = error_get_last();
+        logMessage('Failed to fetch posts from WordPress API. Error: ' . $error['message']);
         return [];
     }
     return json_decode($response, true);
