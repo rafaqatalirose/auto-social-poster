@@ -35,6 +35,11 @@ function fetchPosts($apiUrl) {
             'cafile' => __DIR__ . '/cacert.pem',
         ]
     ]);
+    
+if (!file_exists(__DIR__ . '/cacert.pem')) {
+    logMessage('SSL certificate file not found: cacert.pem');
+    exit('SSL certificate file not found. Check your GitHub repository.');
+}
 
     $response = file_get_contents($apiUrl, false, $context);
     if ($response === false) {
