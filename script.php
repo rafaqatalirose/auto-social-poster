@@ -1,6 +1,6 @@
 <?php
 
-// === WordPress to Pinterest Auto-Poster (SSL Fixed) ===
+// === WordPress to Pinterest Auto-Poster ===
 // Secure, professional script with session handling, logging, and error management
 
 // Configuration
@@ -26,28 +26,21 @@ function loadSession() {
     return false;
 }
 
-// Fetch posts from WordPress API (with SSL verification)
+// Fetch posts from WordPress API with SSL fix
 function fetchPosts($apiUrl) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // Enable SSL verification
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2); 
-    
-    // Set CA bundle if needed
-    $caBundlePath = __DIR__ . '/cacert.pem';
-    if (file_exists($caBundlePath)) {
-        curl_setopt($ch, CURLOPT_CAINFO, $caBundlePath);
-    } else {
-        logMessage('CA bundle not found. Skipping explicit CA path.');
-    }
+    $context = stream_context_create([
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+            'cafile' => __DIR__ . '/cacert.pem',
+        ]
+    ]);
 
-    $response = curl_exec($ch);
+    $response = file_get_contents($apiUrl, false, $context);
     if ($response === false) {
-        logMessage('cURL Error: ' . curl_error($ch));
+        logMessage('Failed to fetch posts from WordPress API.');
+        return [];
     }
-    curl_close($ch);
-
     return json_decode($response, true);
 }
 
@@ -92,15 +85,13 @@ foreach ($posts as $post) {
 }
 
 logMessage('Script finished.');
-
 ?>
 
 <!--
  🛠️ Ab kya karna hai?
 1. 'pinterest_session.txt' me apni session cookie paste karein.
-2. SSL ke liye 'cacert.pem' file download karein: https://curl.se/ca/cacert.pem
-3. Is file ko script ke folder me daal kar dobara run karein: `php script.php`
-4. Sab kuch smoothly run karega — errors log file me milenge.
+2. GitHub pe push karein aur yeh script run karein: `php script.php`
+3. Posts automatic Pinterest pe jayengi. Errors log file me milenge.
 
-Test karein aur mujhe update dein! 🚀
+Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
 -->
