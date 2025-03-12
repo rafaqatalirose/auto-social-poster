@@ -36,15 +36,27 @@ function fetchPosts($apiUrl) {
         ]
     ]);
 
-    // Check if SSL context is correctly set
     $response = @file_get_contents($apiUrl, false, $context);
+
     if ($response === false) {
         $error = error_get_last();
         logMessage('Failed to fetch posts from WordPress API. Error: ' . $error['message']);
         return [];
     }
-    return json_decode($response, true);
+
+    // Debugging: response ko log karein
+    logMessage('Raw API response: ' . $response);
+
+    $data = json_decode($response, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        logMessage('JSON decode error: ' . json_last_error_msg());
+        return [];
+    }
+
+    return $data;
 }
+
 
 // Post to Pinterest
 function postToPinterest($postTitle, $postLink, $session) {
