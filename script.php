@@ -1,108 +1,48 @@
 <?php
 
-// === WordPress to Pinterest Auto-Poster (Optimized) ===
-
-// Configuration
-$wordpressApiUrl = 'https://newvideo.great-site.net/wp-json/wp/v2/posts';
-$pinterestBoardUrl = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
-$sessionFile = 'pinterest_session.txt';
-$logFile = 'auto-post.log';
-
-// Helper function to log messages
-function logMessage($message) {
-    global $logFile;
-    $timestamp = date('Y-m-d H:i:s');
-    file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
-}
-
-// Load session
-function loadSession() {
-    global $sessionFile;
-    if (file_exists($sessionFile)) {
-        return trim(file_get_contents($sessionFile));
-    }
-    logMessage('Session file not found. Please log in to Pinterest manually.');
-    return false;
-}
-
-// Fetch posts from WordPress API with error handling
 function fetchPosts($apiUrl) {
+    // Stream context for SSL
     $context = stream_context_create([
+        'http' => [
+            'ignore_errors' => true
+        ],
         'ssl' => [
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'cafile' => __DIR__ . '/cacert.pem',
-        ]
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+        ],
     ]);
 
-    $response = @file_get_contents($apiUrl, false, $context);
+    // Fetching data from API
+    $response = file_get_contents($apiUrl, false, $context);
+
     if ($response === false) {
-        logMessage('Failed to fetch posts from WordPress API. Check SSL and API status.');
-        return [];
-    }
-    
-    $posts = json_decode($response, true);
-    if (empty($posts)) {
-        logMessage('API returned empty or invalid response.');
-        return [];
-    }
-    
-    return $posts;
-}
-
-// Post to Pinterest
-function postToPinterest($postTitle, $postLink, $session) {
-    $pinData = [
-        'title' => $postTitle,
-        'link' => $postLink,
-    ];
-
-    $ch = curl_init('https://www.pinterest.com/resource/PinResource/create/');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($pinData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Cookie: ' . $session]);
-    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode === 200) {
-        logMessage("Successfully posted to Pinterest: $postTitle");
+        echo "API call failed!";
     } else {
-        logMessage("Failed to post to Pinterest. HTTP Code: $httpCode\nResponse: $response");
+        echo "API Response: " . $response;
     }
-}
 
-// Main script logic
-logMessage('Script started.');
-$session = loadSession();
-if (!$session) exit('Session not found. Check log for details.');
+    // Decode JSON response
+    $data = json_decode($response, true);
 
-$posts = fetchPosts($wordpressApiUrl);
-if (empty($posts)) exit('No posts found. Check log for details.');
-
-foreach ($posts as $post) {
-    $title = $post['title']['rendered'] ?? 'Untitled';
-    $link = $post['link'] ?? '';
-    
-    if ($link) {
-        postToPinterest($title, $link, $session);
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo "JSON decode error: " . json_last_error_msg();
     } else {
-        logMessage("Skipping post without valid link: $title");
+        echo "JSON decoded successfully!\n";
+        
+        // Loop through posts
+        if (!empty($data)) {
+            foreach ($data as $post) {
+                echo "Title: " . $post['title']['rendered'] . "\n";
+                echo "Link: " . $post['link'] . "\n\n";
+            }
+        } else {
+            echo "No posts found!";
+        }
     }
 }
 
-logMessage('Script finished.');
+// API URL
+$apiUrl = 'https://newvideo.great-site.net/wp-json/wp/v2/posts';
+fetchPosts($apiUrl);
 
 ?>
-
-<!--
- 🛠️ Setup steps:
-1. Download 'cacert.pem' file and place it in your project directory.
-2. Paste your Pinterest session cookie in 'pinterest_session.txt'.
-3. Run the script: `php script.php`
-
-If anything breaks, check the 'auto-post.log' file for errors! 🚀
--->
