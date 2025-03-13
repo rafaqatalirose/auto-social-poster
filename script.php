@@ -10,8 +10,8 @@ $sessionFile = 'pinterest_session.txt';
 $logFile = 'auto-post.log';
 
 // WordPress API Credentials
-$apiUsername = 'hotviralhub'; // Aapka WP username
-$apiPassword = 'AG&8oR9xXv'; // WP Application Password
+$apiUsername = 'hotvira'; // Aapka WP username
+$apiPassword = 'AG&8oR9'; // WP Application Password
 
 // Helper function to log messages
 function logMessage($message) {
