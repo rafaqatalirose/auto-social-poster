@@ -4,6 +4,7 @@ function fetchPosts($apiUrl)
 {
     $cookieFile = 'cookies.txt';
 
+    // پہلا request cookies collect کرنے کے لیے
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -14,7 +15,23 @@ function fetchPosts($apiUrl)
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    
+    curl_close($ch);
+
+    if ($httpCode !== 200) {
+        echo "Failed to fetch initial response. HTTP Status Code: $httpCode\n";
+        return null;
+    }
+
+    // دوسرا request cookies کے ساتھ
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     if ($httpCode !== 200) {
@@ -45,5 +62,4 @@ if ($posts && count($posts) > 0) {
 
 ?>
 
-// اس script کو چلائیں، اور cookies handle کرنے کے بعد دوبارہ API سے صحیح response آنا چاہیے۔
-// اگر کوئی اور error آئے تو بتائیں تاکہ ہم اسے بھی fix کر سکیں! 🚀
+// اب script پہلے cookies collect کرے گا اور پھر authenticated request کرے گا! 🚀
