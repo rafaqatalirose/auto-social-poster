@@ -1,7 +1,6 @@
 <?php
 
-// === WordPress to Pinterest Auto-Poster (Professional Version) ===
-// High-level, secure script with SSL handling, logging, and session management
+// === WordPress to Pinterest Auto-Poster (Optimized) ===
 
 // Configuration
 $wordpressApiUrl = 'https://newvideo.great-site.net/wp-json/wp/v2/posts';
@@ -16,7 +15,7 @@ function logMessage($message) {
     file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
 }
 
-// Load Pinterest session
+// Load session
 function loadSession() {
     global $sessionFile;
     if (file_exists($sessionFile)) {
@@ -26,28 +25,25 @@ function loadSession() {
     return false;
 }
 
-// Fetch posts from WordPress API using cURL
+// Fetch posts from WordPress API with error handling
 function fetchPosts($apiUrl) {
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
-    
-    $response = curl_exec($ch);
-    
-    if (curl_errno($ch)) {
-        logMessage('cURL error: ' . curl_error($ch));
-        curl_close($ch);
+    $context = stream_context_create([
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
+            'cafile' => __DIR__ . '/cacert.pem',
+        ]
+    ]);
+
+    $response = @file_get_contents($apiUrl, false, $context);
+    if ($response === false) {
+        logMessage('Failed to fetch posts from WordPress API. Check SSL and API status.');
         return [];
     }
     
-    curl_close($ch);
-    
     $posts = json_decode($response, true);
-    
     if (empty($posts)) {
-        logMessage('No posts found in WordPress API response.');
+        logMessage('API returned empty or invalid response.');
         return [];
     }
     
@@ -65,9 +61,8 @@ function postToPinterest($postTitle, $postLink, $session) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($pinData));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Cookie: ' . $session,
-    ]);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Cookie: ' . $session]);
+    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -89,14 +84,14 @@ $posts = fetchPosts($wordpressApiUrl);
 if (empty($posts)) exit('No posts found. Check log for details.');
 
 foreach ($posts as $post) {
-    if (!isset($post['title']['rendered'], $post['link'])) {
-        logMessage('Invalid post data structure. Skipping post.');
-        continue;
-    }
+    $title = $post['title']['rendered'] ?? 'Untitled';
+    $link = $post['link'] ?? '';
     
-    $title = strip_tags($post['title']['rendered']);
-    $link = $post['link'];
-    postToPinterest($title, $link, $session);
+    if ($link) {
+        postToPinterest($title, $link, $session);
+    } else {
+        logMessage("Skipping post without valid link: $title");
+    }
 }
 
 logMessage('Script finished.');
@@ -104,10 +99,10 @@ logMessage('Script finished.');
 ?>
 
 <!--
- 🛠️ Ab kya karna hai?
-1. 'pinterest_session.txt' me apni session cookie paste karein.
-2. GitHub pe push karein aur yeh script run karein: `php script.php`
-3. Posts automatic Pinterest pe jayengi. Errors log file me milenge.
+ 🛠️ Setup steps:
+1. Download 'cacert.pem' file and place it in your project directory.
+2. Paste your Pinterest session cookie in 'pinterest_session.txt'.
+3. Run the script: `php script.php`
 
-Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
+If anything breaks, check the 'auto-post.log' file for errors! 🚀
 -->
