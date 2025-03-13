@@ -37,20 +37,13 @@ function fetchPosts($apiUrl) {
 
     if (curl_errno($ch)) {
         logMessage('cURL error: ' . curl_error($ch)); // Error logging
-        return false;
+        curl_close($ch); // cURL session close karein
+        return [];
     }
 
     curl_close($ch);
 
-    return $response;
-}
-
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        logMessage('JSON decoding error: ' . json_last_error_msg());
-        return [];
-    }
-
-    return $posts;
+    return json_decode($response, true); // JSON response ko decode karein
 }
 
 // Post to Pinterest with cURL
