@@ -2,7 +2,7 @@ name: Auto Post to Pinterest
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Har 30 minute me run hoga
+    - : '*/30 * * * *'  # Har 30 minute me run hoga
   workflow_dispatch:       # Manual trigger option
 
 jobs:
