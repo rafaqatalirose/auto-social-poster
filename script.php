@@ -1,7 +1,7 @@
 <?php
 
-// === Professional WordPress to Pinterest Auto-Poster ===
-// Full-featured script with session handling, logging, SSL fixes, and robust error management
+// === WordPress to Pinterest Auto-Poster (Professional Version) ===
+// High-level, secure script with SSL handling, logging, and session management
 
 // Configuration
 $wordpressApiUrl = 'https://newvideo.great-site.net/wp-json/wp/v2/posts';
@@ -20,33 +20,41 @@ function logMessage($message) {
 function loadSession() {
     global $sessionFile;
     if (file_exists($sessionFile)) {
-        return file_get_contents($sessionFile);
+        return trim(file_get_contents($sessionFile));
     }
     logMessage('Session file not found. Please log in to Pinterest manually.');
     return false;
 }
 
+// Fetch posts from WordPress API using cURL
 function fetchPosts($apiUrl) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // SSL verification enable karein
-    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem'); // Certificate file ka path
-
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
+    
     $response = curl_exec($ch);
-
+    
     if (curl_errno($ch)) {
-        logMessage('cURL error: ' . curl_error($ch)); // Error logging
-        curl_close($ch); // cURL session close karein
+        logMessage('cURL error: ' . curl_error($ch));
+        curl_close($ch);
         return [];
     }
-
+    
     curl_close($ch);
-
-    return json_decode($response, true); // JSON response ko decode karein
+    
+    $posts = json_decode($response, true);
+    
+    if (empty($posts)) {
+        logMessage('No posts found in WordPress API response.');
+        return [];
+    }
+    
+    return $posts;
 }
 
-// Post to Pinterest with cURL
+// Post to Pinterest
 function postToPinterest($postTitle, $postLink, $session) {
     $pinData = [
         'title' => $postTitle,
@@ -60,7 +68,6 @@ function postToPinterest($postTitle, $postLink, $session) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Cookie: ' . $session,
     ]);
-    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -79,20 +86,17 @@ $session = loadSession();
 if (!$session) exit('Session not found. Check log for details.');
 
 $posts = fetchPosts($wordpressApiUrl);
-if (empty($posts)) {
-    logMessage('No posts found from WordPress API.');
-    exit('No posts found. Check log for details.');
-}
+if (empty($posts)) exit('No posts found. Check log for details.');
 
 foreach ($posts as $post) {
-    $title = $post['title']['rendered'] ?? 'Untitled Post';
-    $link = $post['link'] ?? '';
-    
-    if (!empty($link)) {
-        postToPinterest($title, $link, $session);
-    } else {
-        logMessage("Skipping post due to missing link: $title");
+    if (!isset($post['title']['rendered'], $post['link'])) {
+        logMessage('Invalid post data structure. Skipping post.');
+        continue;
     }
+    
+    $title = strip_tags($post['title']['rendered']);
+    $link = $post['link'];
+    postToPinterest($title, $link, $session);
 }
 
 logMessage('Script finished.');
@@ -100,10 +104,10 @@ logMessage('Script finished.');
 ?>
 
 <!--
- 🚀 Setup Instructions:
+ 🛠️ Ab kya karna hai?
 1. 'pinterest_session.txt' me apni session cookie paste karein.
 2. GitHub pe push karein aur yeh script run karein: `php script.php`
-3. Agar koi masla ho, auto-post.log file me error details mil jayengi.
+3. Posts automatic Pinterest pe jayengi. Errors log file me milenge.
 
-Agar ab bhi kuch problem aaye, to tension mat lein — hum yahin hain! 💪
+Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
 -->
