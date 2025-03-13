@@ -18,14 +18,15 @@ function fetchPosts($apiUrl)
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch); // Curl error check
-    
+
+    if ($curlError) {
+        echo "cURL Error: $curlError\n";
+    }
+
     curl_close($ch);
 
     if ($httpCode !== 200) {
         echo "Failed to fetch posts. HTTP Status Code: $httpCode\n";
-        if ($curlError) {
-            echo "cURL Error: $curlError\n";
-        }
         return null;
     }
 
