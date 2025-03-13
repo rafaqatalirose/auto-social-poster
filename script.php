@@ -1,60 +1,113 @@
 <?php
 
-function fetchPosts($apiUrl)
-{
-    $cookieFile = 'cookies.txt';
-    $logFile = 'log.txt';
+// === WordPress to Pinterest Auto-Poster (Professional Version) ===
+// High-level, secure script with SSL handling, logging, and session management
 
+// Configuration
+$wordpressApiUrl = 'https://hotviralhub.space/wp-json/wp/v2/posts';
+$pinterestBoardUrl = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
+$sessionFile = 'pinterest_session.txt';
+$logFile = 'auto-post.log';
+
+// Helper function to log messages
+function logMessage($message) {
+    global $logFile;
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+}
+
+// Load Pinterest session
+function loadSession() {
+    global $sessionFile;
+    if (file_exists($sessionFile)) {
+        return trim(file_get_contents($sessionFile));
+    }
+    logMessage('Session file not found. Please log in to Pinterest manually.');
+    return false;
+}
+
+// Fetch posts from WordPress API using cURL
+function fetchPosts($apiUrl) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
-    curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    curl_setopt($ch, CURLOPT_VERBOSE, true);
-    curl_setopt($ch, CURLOPT_STDERR, fopen($logFile, 'w'));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
+    
+    $response = curl_exec($ch);
+    
+    if (curl_errno($ch)) {
+        logMessage('cURL error: ' . curl_error($ch));
+        curl_close($ch);
+        return [];
+    }
+    
+    curl_close($ch);
+    
+    $posts = json_decode($response, true);
+    
+    if (empty($posts)) {
+        logMessage('No posts found in WordPress API response.');
+        return [];
+    }
+    
+    return $posts;
+}
+
+// Post to Pinterest
+function postToPinterest($postTitle, $postLink, $session) {
+    $pinData = [
+        'title' => $postTitle,
+        'link' => $postLink,
+    ];
+
+    $ch = curl_init('https://www.pinterest.com/resource/PinResource/create/');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($pinData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Cookie: ' . $session,
+    ]);
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-
     curl_close($ch);
 
-    if ($curlError) {
-        echo "cURL error: $curlError\n";
-        return null;
+    if ($httpCode === 200) {
+        logMessage("Successfully posted to Pinterest: $postTitle");
+    } else {
+        logMessage("Failed to post to Pinterest. HTTP Code: $httpCode\nResponse: $response");
     }
-
-    if ($httpCode !== 200) {
-        echo "Failed to fetch posts. HTTP Status Code: $httpCode\n";
-        return null;
-    }
-
-    $data = json_decode($response, true);
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        echo "JSON decode error: " . json_last_error_msg() . "\n";
-        return null;
-    }
-
-    return $data;
 }
 
-$apiUrl = 'https://newvideo.great-site.net/wp-json/wp/v2/posts';
-$posts = fetchPosts($apiUrl);
+// Main script logic
+logMessage('Script started.');
+$session = loadSession();
+if (!$session) exit('Session not found. Check log for details.');
 
-if ($posts && count($posts) > 0) {
-    foreach ($posts as $post) {
-        echo "Title: " . $post['title']['rendered'] . "\n";
-        echo "Link: " . $post['link'] . "\n\n";
+$posts = fetchPosts($wordpressApiUrl);
+if (empty($posts)) exit('No posts found. Check log for details.');
+
+foreach ($posts as $post) {
+    if (!isset($post['title']['rendered'], $post['link'])) {
+        logMessage('Invalid post data structure. Skipping post.');
+        continue;
     }
-} else {
-    echo "No posts found or failed to fetch posts.\n";
-    echo "Check 'log.txt' for more details.\n";
+    
+    $title = strip_tags($post['title']['rendered']);
+    $link = $post['link'];
+    postToPinterest($title, $link, $session);
 }
+
+logMessage('Script finished.');
 
 ?>
 
-// Is script ko GitHub pe upload karein, phir server pe run karein:
-// `php script.php`
-// Error aane pe 'log.txt' file check karein — wo cURL connection ka pura status show karegi! 🚀
+<!--
+ 🛠️ Ab kya karna hai?
+1. 'pinterest_session.txt' me apni session cookie paste karein.
+2. GitHub pe push karein aur yeh script run karein: `php script.php`
+3. Posts automatic Pinterest pe jayengi. Errors log file me milenge.
+
+Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
+-->
