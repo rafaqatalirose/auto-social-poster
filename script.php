@@ -1,13 +1,17 @@
 <?php
 
-// === WordPress to Pinterest Auto-Poster (Professional Version) ===
-// High-level, secure script with SSL handling, logging, and session management
+// === WordPress to Pinterest Auto-Poster (Final Version) ===
+// Secure script with API authentication, SSL handling, logging, and session management
 
 // Configuration
 $wordpressApiUrl = 'https://hotviralhub.space/wp-json/wp/v2/posts';
 $pinterestBoardUrl = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
 $sessionFile = 'pinterest_session.txt';
 $logFile = 'auto-post.log';
+
+// WordPress API Credentials
+$apiUsername = 'hotviralhub'; // Aapka WP username
+$apiPassword = 'AG&8oR9xXv'; // WP Application Password
 
 // Helper function to log messages
 function logMessage($message) {
@@ -27,30 +31,30 @@ function loadSession() {
 }
 
 // Fetch posts from WordPress API using cURL
-function fetchPosts($apiUrl) {
+function fetchPosts($apiUrl, $username, $password) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem');
-    
+
     $response = curl_exec($ch);
-    
+
     if (curl_errno($ch)) {
         logMessage('cURL error: ' . curl_error($ch));
         curl_close($ch);
         return [];
     }
-    
+
     curl_close($ch);
-    
     $posts = json_decode($response, true);
-    
+
     if (empty($posts)) {
         logMessage('No posts found in WordPress API response.');
         return [];
     }
-    
+
     return $posts;
 }
 
@@ -85,7 +89,7 @@ logMessage('Script started.');
 $session = loadSession();
 if (!$session) exit('Session not found. Check log for details.');
 
-$posts = fetchPosts($wordpressApiUrl);
+$posts = fetchPosts($wordpressApiUrl, $apiUsername, $apiPassword);
 if (empty($posts)) exit('No posts found. Check log for details.');
 
 foreach ($posts as $post) {
@@ -93,7 +97,7 @@ foreach ($posts as $post) {
         logMessage('Invalid post data structure. Skipping post.');
         continue;
     }
-    
+
     $title = strip_tags($post['title']['rendered']);
     $link = $post['link'];
     postToPinterest($title, $link, $session);
@@ -104,10 +108,12 @@ logMessage('Script finished.');
 ?>
 
 <!--
- 🛠️ Ab kya karna hai?
-1. 'pinterest_session.txt' me apni session cookie paste karein.
-2. GitHub pe push karein aur yeh script run karein: `php script.php`
-3. Posts automatic Pinterest pe jayengi. Errors log file me milenge.
+ 🛠️ Final Setup Steps:
+1. WordPress Dashboard → Users → Your Profile → Generate Application Password.
+2. Replace 'YOUR_WP_USERNAME' and 'YOUR_WP_APPLICATION_PASSWORD' above.
+3. Save Pinterest session cookie in 'pinterest_session.txt'.
+4. Run script: `php script.php`
+5. Check 'auto-post.log' for success or errors.
 
-Jaldi se setup karein — aur agar kuch problem aaye to mujhe batayein! 🚀
+Aap ka kaam ab asaan ho gaya! Agar koi dikkat aaye, to bas awaaz dena! 🚀
 -->
