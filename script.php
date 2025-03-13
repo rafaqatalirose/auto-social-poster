@@ -4,7 +4,7 @@
 // Secure script with API authentication, SSL handling, logging, and session management
 
 // Configuration
-$wordpressApiUrl = 'https://hotviralhub.space/wp-json/wp/v2/posts';
+$wordpressApiUrl = 'https://admin_username:application_password@hotviralhub.space/wp-json/wp/v2/posts';
 $pinterestBoardUrl = 'https://www.pinterest.com/aa4783116/movie-trailers-and-clips/';
 $sessionFile = 'pinterest_session.txt';
 $logFile = 'auto-post.log';
