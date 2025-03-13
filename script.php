@@ -11,23 +11,19 @@ function fetchPosts($apiUrl)
     curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
     curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // SSL Fixes
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // SSL verify off
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-    // Timeout
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30); // Timeout 30 seconds
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
+    $curlError = curl_error($ch); // Curl error check
     
     curl_close($ch);
 
     if ($httpCode !== 200) {
         echo "Failed to fetch posts. HTTP Status Code: $httpCode\n";
-        if (!empty($curlError)) {
+        if ($curlError) {
             echo "cURL Error: $curlError\n";
         }
         return null;
@@ -53,8 +49,4 @@ if ($posts && count($posts) > 0) {
 } else {
     echo "No posts found or failed to fetch posts.\n";
 }
-
 ?>
-
-// یہ script cookies save کرے گا، SSL verify نہیں کرے گا اور timeout handle کرے گا۔
-// آپ اس کو دوبارہ چلائیں اور result دیکھیں۔ 🚀
