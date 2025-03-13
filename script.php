@@ -26,30 +26,25 @@ function loadSession() {
     return false;
 }
 
-// Fetch posts from WordPress API with SSL fix and log the response
 function fetchPosts($apiUrl) {
-    $context = stream_context_create([
-        'ssl' => [
-            'verify_peer' => true,
-            'verify_peer_name' => true,
-            'cafile' => __DIR__ . '/cacert.pem',
-        ]
-    ]);
-    
-if (!file_exists(__DIR__ . '/cacert.pem')) {
-    logMessage('SSL certificate file not found: cacert.pem');
-    exit('SSL certificate file not found. Check your GitHub repository.');
-}
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $apiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // SSL verification enable karein
+    curl_setopt($ch, CURLOPT_CAINFO, __DIR__ . '/cacert.pem'); // Certificate file ka path
 
-    $response = file_get_contents($apiUrl, false, $context);
-    if ($response === false) {
-        logMessage('Failed to fetch posts from WordPress API.');
-        return [];
+    $response = curl_exec($ch);
+
+    if (curl_errno($ch)) {
+        logMessage('cURL error: ' . curl_error($ch)); // Error logging
+        return false;
     }
 
-    logMessage("Raw API Response: " . $response);
+    curl_close($ch);
 
-    $posts = json_decode($response, true);
+    return $response;
+}
+
     if (json_last_error() !== JSON_ERROR_NONE) {
         logMessage('JSON decoding error: ' . json_last_error_msg());
         return [];
